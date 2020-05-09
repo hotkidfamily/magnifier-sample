@@ -190,7 +190,8 @@ BOOL ScreenCapturerWinMagnifier::OnMagImageScalingCallback(
   ScreenCapturerWinMagnifier* owner =
       reinterpret_cast<ScreenCapturerWinMagnifier*>(TlsGetValue(GetTlsIndex()));
   TlsSetValue(GetTlsIndex(), nullptr);
-  owner->OnCaptured(srcdata, srcheader);
+  if(owner)
+    owner->OnCaptured(srcdata, srcheader);
 
   return TRUE;
 }
