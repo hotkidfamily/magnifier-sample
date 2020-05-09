@@ -5,6 +5,7 @@
 #include "magnifier.h"
 #include "desktop_capture/desktop_cpature_include.h"
 #include "FakeSharedMemoryFactory.h"
+#include "GDIRender.h"
 
 #include <iostream>
 
@@ -14,27 +15,36 @@ using namespace webrtc;
 static std::unique_ptr<DesktopCapturer> _webrtcCap;
 std::unique_ptr<SharedMemoryFactory> _sharedMemoryFactory;
 
-class MagCallback : public DesktopCapturer::Callback{
-public:
-    MagCallback() {};
-    // Called after a frame has been captured. |frame| is not nullptr if and
-    // only if |result| is SUCCESS.
-    virtual void OnCaptureResult(DesktopCapturer::Result result,
-        std::unique_ptr<DesktopFrame> frame)
-    {
-        std::cout << "nothing";
-    };
-
-    virtual ~MagCallback() {}
-};
-
-static std::unique_ptr<MagCallback> _webrtcCallback;
-
 // 全局变量:
 HINSTANCE hInst;                                // 当前实例
 WCHAR szTitle[MAX_LOADSTRING];                  // 标题栏文本
 WCHAR szWindowClass[MAX_LOADSTRING];            // 主窗口类名
 HWND hWnd;
+
+
+class MagCallback : public DesktopCapturer::Callback {
+public:
+    MagCallback() {
+        hdc = GetDC(hWnd);
+        _render.reset(new CGDIRender());
+    };
+    // Called after a frame has been captured. |frame| is not nullptr if and
+    // only if |result| is SUCCESS.
+    virtual void OnCaptureResult(DesktopCapturer::Result result,
+        std::unique_ptr<DesktopFrame> frame)
+    {
+        _render->render(hWnd, frame);
+    };
+
+    virtual ~MagCallback() {
+        ReleaseDC(hWnd, hdc);
+    }
+private:
+    HDC hdc;
+    std::unique_ptr<CGDIRender> _render;
+};
+
+static std::unique_ptr<MagCallback> _webrtcCallback;
 
 // 此代码模块中包含的函数的前向声明:
 ATOM                MyRegisterClass(HINSTANCE hInstance);

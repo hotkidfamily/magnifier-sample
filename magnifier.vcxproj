@@ -170,6 +170,7 @@
     <ClInclude Include="desktop_capture\time_utils.h" />
     <ClInclude Include="FakeSharedMemoryFactory.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="GDIRender.h" />
     <ClInclude Include="magnifier.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
@@ -188,6 +189,7 @@
     <ClCompile Include="desktop_capture\shared_memory.cc" />
     <ClCompile Include="desktop_capture\time_utils.cc" />
     <ClCompile Include="FakeSharedMemoryFactory.cpp" />
+    <ClCompile Include="GDIRender.cpp" />
     <ClCompile Include="magnifier.cpp" />
   </ItemGroup>
   <ItemGroup>
