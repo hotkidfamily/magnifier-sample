@@ -359,9 +359,9 @@ void ScreenCapturerWinMagnifier::OnCaptured(void* data,
   }
 
   // Copy the data into the frame.
-  //current_frame->CopyPixelsFrom(
-  //    reinterpret_cast<uint8_t*>(data), header.stride,
-  //    DesktopRect::MakeXYWH(0, 0, header.width, header.height));
+  current_frame->CopyPixelsFrom(
+      reinterpret_cast<uint8_t*>(data), header.stride,
+      DesktopRect::MakeXYWH(0, 0, header.width, header.height));
 
   magnifier_capture_succeeded_ = true;
 }

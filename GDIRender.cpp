@@ -56,10 +56,11 @@ void CGDIRender::render(HWND hWnd, std::unique_ptr<DesktopFrame> &frame)
 	auto w = rect.right - rect.left;
 	auto h = rect.bottom - rect.top;
 
-	::SetDIBitsToDevice(_hMemDC, 0, 0, srcW, srcH, 0, 0, srcW, srcH, data, (BITMAPINFO*)&_bmpHeader, DIB_RGB_COLORS);
+	::SetDIBitsToDevice(_hMemDC, 0, 0, srcW, srcH, 0, 0, 0, srcH, data, (BITMAPINFO*)&_bmpHeader, DIB_RGB_COLORS);
 	::SetStretchBltMode(_hDC, COLORONCOLOR);
 
-	::StretchBlt(_hDC, 0, 0, w, h, _hMemDC, 0, 0, srcW, srcH, SRCCOPY);
+	//::BitBlt(_hDC, 0, 0, w, h, _hMemDC, 0, 0, SRCCOPY);
+	::StretchBlt(_hDC, 0, 0, w, h, _hMemDC, 0, srcH-1, srcW, -srcH, SRCCOPY);
 }
 
 void CGDIRender::ConstructBMPHeader(int width, int height, pix_fmt format, BITMAPINFOHEADER& bitmapHeader)

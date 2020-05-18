@@ -25,7 +25,6 @@ HWND hWnd;
 class MagCallback : public DesktopCapturer::Callback {
 public:
     MagCallback() {
-        hdc = GetDC(hWnd);
         _render.reset(new CGDIRender());
     };
     // Called after a frame has been captured. |frame| is not nullptr if and
@@ -37,10 +36,8 @@ public:
     };
 
     virtual ~MagCallback() {
-        ReleaseDC(hWnd, hdc);
     }
 private:
-    HDC hdc;
     std::unique_ptr<CGDIRender> _render;
 };
 
@@ -135,7 +132,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hInst = hInstance; // 将实例句柄存储在全局变量中
 
    hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+      CW_USEDEFAULT, 0, 1280, 720, nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
    {
