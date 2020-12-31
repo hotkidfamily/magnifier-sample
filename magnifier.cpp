@@ -1,6 +1,7 @@
 ﻿// magnifier.cpp : 定义应用程序的入口点。
 //
-
+#include <shellscalingapi.h>
+#include <WtsApi32.h>
 #include "framework.h"
 #include "magnifier.h"
 #include "desktop_capture/desktop_cpature_include.h"
@@ -20,6 +21,11 @@ HINSTANCE hInst;                                // 当前实例
 WCHAR szTitle[MAX_LOADSTRING];                  // 标题栏文本
 WCHAR szWindowClass[MAX_LOADSTRING];            // 主窗口类名
 HWND hWnd;
+
+typedef  BOOL (WINAPI *funWTSRegisterSessionNotification)(HWND hWnd, DWORD dwFlags);
+typedef  BOOL (WINAPI *funWTSUnRegisterSessionNotification)(HWND hWnd);
+static funWTSRegisterSessionNotification pWTSRegisterSessionNotification = nullptr;
+static funWTSUnRegisterSessionNotification pWTSUnRegisterSessionNotification = nullptr;
 
 
 class MagCallback : public DesktopCapturer::Callback {
@@ -49,6 +55,8 @@ BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
+#pragma comment(lib, "Shcore.lib")
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -56,6 +64,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
+
+    SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
 
     // TODO: 在此处放置代码。
 
@@ -85,6 +95,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             DispatchMessage(&msg);
         }
     }
+
+    if(pWTSUnRegisterSessionNotification)
+        pWTSUnRegisterSessionNotification(hWnd);
 
     return (int) msg.wParam;
 }
@@ -139,6 +152,17 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
+   if (!pWTSRegisterSessionNotification) {
+       HMODULE hModule = LoadLibraryW(L"Wtsapi32.dll");
+       if (hModule) {
+           pWTSRegisterSessionNotification = reinterpret_cast<funWTSRegisterSessionNotification>(GetProcAddress(hModule, "WTSRegisterSessionNotification"));
+           pWTSUnRegisterSessionNotification = reinterpret_cast<funWTSUnRegisterSessionNotification>(GetProcAddress(hModule, "WTSUnRegisterSessionNotification"));
+       }
+   }
+   
+   if(pWTSRegisterSessionNotification)
+        pWTSRegisterSessionNotification(hWnd, NOTIFY_FOR_THIS_SESSION);
+   
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 
@@ -213,6 +237,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
+    case WM_DPICHANGED:
+    case WM_DISPLAYCHANGE:
+        {
+            _webrtcCap.reset(nullptr);
+            DesktopCaptureOptions options;
+            _webrtcCap = DesktopCapturer::CreateScreenCapturer(options);
+            //_sharedMemoryFactory.reset(new FakeSharedMemoryFactory());
+            _webrtcCap->SetSharedMemoryFactory(std::unique_ptr<SharedMemoryFactory>(new FakeSharedMemoryFactory()));
+            _webrtcCap->SelectSource(0);
+            _webrtcCap->Start(_webrtcCallback.get());
+        }
+        break;
+    case WM_WTSSESSION_CHANGE:
+    {
+        switch (wParam) {
+        case WTS_SESSION_LOCK:
+            MessageBox(NULL, L"WTS_SESSION_LOCK", L"ERROR", MB_OK);
+            break;
+        case WTS_SESSION_UNLOCK:
+            MessageBox(NULL, L"WTS_SESSION_UNLOCK", L"ERROR", MB_OK);
+            break;
+        }
+    }
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }

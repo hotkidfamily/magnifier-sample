@@ -196,6 +196,30 @@ BOOL ScreenCapturerWinMagnifier::OnMagImageScalingCallback(
   return TRUE;
 }
 
+LRESULT WINAPI MagWindowProc(
+    _In_ HWND hWnd,
+    _In_ UINT Msg,
+    _In_ WPARAM wParam,
+    _In_ LPARAM lParam)
+{
+    if (Msg == WM_DISPLAYCHANGE) {
+        ScreenCapturerWinMagnifier* pthis = (ScreenCapturerWinMagnifier*)GetWindowLongPtr(hWnd, 0);
+        pthis->OnWinEvent(Msg);
+    }
+
+    return DefWindowProc(hWnd, Msg, wParam, lParam);
+}
+
+void ScreenCapturerWinMagnifier::OnWinEvent(UINT event)
+{
+    switch (event) {
+    case WM_DISPLAYCHANGE:
+        break;
+    default:
+        break;
+    }
+}
+
 // TODO(zijiehe): These functions are available on Windows Vista or upper, so we
 // do not need to use LoadLibrary and GetProcAddress anymore. Use regular
 // include and function calls instead of a dynamical loaded library.
@@ -262,7 +286,7 @@ bool ScreenCapturerWinMagnifier::InitializeMagnifier() {
   // Magnification API for more infomation.
   WNDCLASSEXW wcex = {};
   wcex.cbSize = sizeof(WNDCLASSEX);
-  wcex.lpfnWndProc = &DefWindowProc;
+  wcex.lpfnWndProc = &MagWindowProc;
   wcex.hInstance = hInstance;
   wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
   wcex.lpszClassName = kMagnifierHostClass;
@@ -281,6 +305,8 @@ bool ScreenCapturerWinMagnifier::InitializeMagnifier() {
     //                      << GetLastError();
     return false;
   }
+
+  SetWindowLongPtr(host_window_, 0, (LONG_PTR)this);
 
   // Create the magnifier control.
   magnifier_window_ = CreateWindowW(kMagnifierWindowClass, kMagnifierWindowName,

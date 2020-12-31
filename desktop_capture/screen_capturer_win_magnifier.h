@@ -46,6 +46,7 @@ class ScreenCapturerWinMagnifier : public DesktopCapturer{
 
   // Overridden from ScreenCapturer:
   void Start(Callback* callback) override;
+  void Stop();
   void SetSharedMemoryFactory(
       std::unique_ptr<SharedMemoryFactory> shared_memory_factory) ;
   void CaptureFrame() override;
@@ -53,6 +54,8 @@ class ScreenCapturerWinMagnifier : public DesktopCapturer{
   bool SelectSource(SourceId id) override;
   void SetExcludedWindow(WindowId window) override;
 
+  void OnWinEvent(UINT envent);
+  
  private:
   typedef BOOL(WINAPI* MagImageScalingCallback)(HWND hwnd,
                                                 void* srcdata,
