@@ -35,9 +35,24 @@ void CGDIRender::render(HWND hWnd, std::unique_ptr<DesktopFrame> &frame)
 	auto srcW = frame->size().width();
 	auto srcH = frame->size().height();
 	auto data = frame->data();
+	auto dpi = GetDpiForWindow(hWnd);
+	auto sysDpi = GetDpiForSystem();
+
+	int vW = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+	int vH = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+	int vLeft = GetSystemMetrics(SM_XVIRTUALSCREEN);
+	int vTop = GetSystemMetrics(SM_YVIRTUALSCREEN);
+
+	int pW = GetSystemMetrics(SM_CXSCREEN);
+	int pH = GetSystemMetrics(SM_CYSCREEN);
+
+	char buff[256];
+	sprintf_s(buff, 256, "%dx%d,Win-DPI %d,Sys-DPI %d,Vrect(%dx%d,%dx%d), pRi(0x0, %dx%d)", srcW, srcH, dpi, sysDpi, vLeft, vTop, vW, vH,  pW, pH);
 
 	RECT rect;
 	GetWindowRect(hWnd, &rect);
+	RECT rect2;
+	GetClientRect(_hWnd, &rect2);
 
 	if (_Size.width() != srcW || _Size.height() != srcH || hWnd != _hWnd) {
 		reset();
@@ -50,6 +65,7 @@ void CGDIRender::render(HWND hWnd, std::unique_ptr<DesktopFrame> &frame)
 		_hMemDC = ::CreateCompatibleDC(_hDC);
 		ConstructBMPHeader(srcW, srcH, pix_fmt::RGBA, _bmpHeader);
 		_hBitmap = ::CreateDIBSection(_hMemDC, (BITMAPINFO*)&_bmpHeader, DIB_RGB_COLORS, (void**)data, NULL, 0);
+
 		::SelectObject(_hMemDC, _hBitmap);
 	}
 
@@ -60,7 +76,8 @@ void CGDIRender::render(HWND hWnd, std::unique_ptr<DesktopFrame> &frame)
 	::SetStretchBltMode(_hDC, COLORONCOLOR);
 
 	//::BitBlt(_hDC, 0, 0, w, h, _hMemDC, 0, 0, SRCCOPY);
-	::StretchBlt(_hDC, 0, 0, w, h, _hMemDC, 0, srcH-1, srcW, -srcH, SRCCOPY);
+	::StretchBlt(_hDC, 0, 0, w, h-100, _hMemDC, 0, srcH-1, srcW, -srcH, SRCCOPY);
+	::DrawTextA(_hDC, buff, -1, &rect2, DT_SINGLELINE | DT_NOCLIP);
 }
 
 void CGDIRender::ConstructBMPHeader(int width, int height, pix_fmt format, BITMAPINFOHEADER& bitmapHeader)
